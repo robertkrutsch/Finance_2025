@@ -577,3 +577,55 @@ plt.grid(True)
 plt.legend()
 plt.savefig("icr_vs_debt_ratio.png")
 plt.show()
+
+import pandas as pd
+
+# --- Input parameters from Annual Report ---
+
+# Market Data
+market_cap = 818_492_000  # Market capitalization (€) from annual report
+book_equity = 1_536_800_000  # Book equity from balance sheet (for comparison)
+# Debt components (from annual report)
+non_current_loans = 204_400_000
+current_loans = 67_400_000
+lease_liabilities = 123_800_000
+total_debt = non_current_loans + current_loans + lease_liabilities
+
+# Interest expense (from annual report)
+interest_expense = 18_744_000
+
+# Tax rate (effective)
+tax_rate = 0.28  # 28% from annual report
+
+# Cost of debt calculation (weighted average)
+cost_of_debt = interest_expense / total_debt
+
+# Bottom-up Beta approach
+industry_unlevered_beta = 1.12  # assumed from Damodaran medtech industry data
+debt_to_equity = total_debt / market_cap
+# Re-lever Beta: βL = βU * [1 + (1 - tax_rate) * (D/E)]
+levered_beta = industry_unlevered_beta * (1 + (1 - tax_rate) * debt_to_equity)
+
+# CAPM parameters
+risk_free_rate = 0.0271  # 10Y German bond yield
+market_risk_premium = 0.0433  # Damodaran's Europe MRP
+
+cost_of_equity = risk_free_rate + levered_beta * market_risk_premium
+
+# Capital structure weights
+firm_value = book_equity + total_debt
+equity_weight = book_equity / firm_value
+debt_weight = total_debt / firm_value
+
+# WACC calculation
+after_tax_cod = cost_of_debt * (1 - tax_rate)
+wacc = equity_weight * cost_of_equity + debt_weight * after_tax_cod
+
+# Build results table
+results = pd.DataFrame({
+    "Parameter": ["Market Cap", "Total Debt", "Cost of Debt", "Unlevered Beta", "Levered Beta",
+                  "Cost of Equity", "Equity Weight", "Debt Weight", "After-Tax Cost of Debt", "WACC"],
+    "Value": [market_cap, total_debt, cost_of_debt, industry_unlevered_beta, levered_beta,
+              cost_of_equity, equity_weight, debt_weight, after_tax_cod, wacc]
+})
+
